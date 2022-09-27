@@ -17,7 +17,7 @@ const trustedForwarder = process.env.TRUSTED_FORWARDER;
 const sleepDuration = 10000;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-async function deployer(path, name = path, ...args) {
+const deployer = async (path, name = path, ...args) => {
   const Contract = await ethers.getContractFactory(path);
   const contract = await Contract.deploy(...args);
   await contract.deployed();
@@ -33,9 +33,9 @@ async function deployer(path, name = path, ...args) {
   fs.writeFileSync(`abi/${name}.json`, JSON.stringify(data, null, 2));
 
   return { ...contract, abi: JSON.parse(contract.interface.format("json")) };
-}
+};
 
-async function approve(ERC20Contract, routerAddress) {
+const approve = async (ERC20Contract, routerAddress) => {
   const totalSupply = await ERC20Contract.totalSupply();
 
   const receipt = await ERC20Contract.approve(routerAddress, totalSupply);
@@ -49,7 +49,7 @@ async function approve(ERC20Contract, routerAddress) {
 
   console.log(`Tx successful with hash: ${receipt.hash}`);
   console.log();
-}
+};
 
 const createPair = async (tokenA, tokenB) => {
   const receipt = await factory.createPair(tokenA.address, tokenB.address, {
@@ -105,7 +105,7 @@ const addPool = async (pair) => {
   console.log(`Tx successful with hash: ${receipt.hash}`);
 };
 
-async function main() {
+const main = async () => {
   const [admin] = await ethers.getSigners();
 
   deployerAddress = admin.address;
@@ -191,7 +191,7 @@ async function main() {
   for (const pair of pairs) {
     await addPool(pair);
   }
-}
+};
 
 main()
   .then(() => {
