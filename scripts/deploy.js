@@ -9,7 +9,7 @@ const fs = require("fs");
 
 let deployerAddress;
 let factory;
-let DistributorV2;
+let SolarDistributorV2;
 let pairs = [];
 
 const trustedForwarder = process.env.TRUSTED_FORWARDER;
@@ -85,7 +85,7 @@ const addLiquidity = async (tokenA, tokenB, amount) => {
 };
 
 const startFarming = async () => {
-  const receipt = await DistributorV2.startFarming();
+  const receipt = await SolarDistributorV2.startFarming();
   await receipt.wait();
 
   console.log(`Farming Started... ${receipt.hash}`);
@@ -93,7 +93,7 @@ const startFarming = async () => {
 };
 
 const addPool = async (pair) => {
-  const receipt = await DistributorV2.add(
+  const receipt = await SolarDistributorV2.add(
     100, // uint256 _allocPoint,
     pair, // IBoringERC20 _lpToken,
     0, // uint16 _depositFeeBP,
@@ -103,6 +103,7 @@ const addPool = async (pair) => {
   await receipt.wait();
 
   console.log(`Tx successful with hash: ${receipt.hash}`);
+  console.log();
 };
 
 const main = async () => {
@@ -112,7 +113,7 @@ const main = async () => {
   console.log(`Deploying contracts using ${deployerAddress}`);
   console.log();
 
-  // Token
+  // Tokens
   const weth = await deployer("WETH");
   const a = await deployer("A");
   const b = await deployer("B");
@@ -168,7 +169,7 @@ const main = async () => {
   }
 
   // Deploy Farms
-  DistributorV2 = await deployer(
+  SolarDistributorV2 = await deployer(
     "contracts/SolarDistributorV2Flatten.sol:SolarDistributorV2",
     "SolarDistributorV2",
     solarBeamToken.address, // geos.address,
@@ -184,7 +185,7 @@ const main = async () => {
   await startFarming();
 
   // get PairsInfo
-  const farmPoolLength = await DistributorV2.poolLength();
+  const farmPoolLength = await SolarDistributorV2.poolLength();
   console.log("farmPoolLength", farmPoolLength);
 
   // Add Pool

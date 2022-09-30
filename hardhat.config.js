@@ -33,6 +33,7 @@ module.exports = {
       accounts: [process.env.PRIVATE_KEY],
       network_id: "5777",
       chainId: 1337,
+      gasPrice: 20000000000,
     },
     ropsten: {
       url: "https://ropsten.infura.io/v3/f7d1c49c04394eeab54c419a185c9b1d",
@@ -49,20 +50,22 @@ module.exports = {
   solidity: {
     compilers: [
       {
-        version: "0.8.0",
-        settings: {
-          optimizer: {
-            enabled: true,
-            runs: 1000,
-          },
-        },
-      },
-      {
         version: "0.8.7",
         settings: {
           optimizer: {
             enabled: true,
             runs: 1000,
+            details: { yul: false },
+          },
+        },
+      },
+      {
+        version: "0.8.0",
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 1000,
+            details: { yul: false },
           },
         },
       },
@@ -72,6 +75,7 @@ module.exports = {
           optimizer: {
             enabled: true,
             runs: 1000,
+            details: { yul: false },
           },
         },
       },
