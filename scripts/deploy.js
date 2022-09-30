@@ -17,12 +17,20 @@ const trustedForwarder = process.env.TRUSTED_FORWARDER;
 const sleepDuration = 10000;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-const deployer = async (path, name = path, ...args) => {
-  const Contract = await ethers.getContractFactory(path);
+const deployer = async (
+  contractPath,
+  address,
+  contractName = contractPath,
+  ...args
+) => {
+  if (address) {
+    return ethers.getContractAt(contractPath, address);
+  }
+  const Contract = await ethers.getContractFactory(contractPath);
   const contract = await Contract.deploy(...args);
   await contract.deployed();
 
-  console.log(`${name} address is: ${contract.address}`);
+  console.log(`${contractName} address is: ${contract.address}`);
   console.log();
 
   const data = {
@@ -30,7 +38,7 @@ const deployer = async (path, name = path, ...args) => {
     abi: JSON.parse(contract.interface.format("json")),
   };
 
-  fs.writeFileSync(`abi/${name}.json`, JSON.stringify(data, null, 2));
+  fs.writeFileSync(`abi/${contractName}.json`, JSON.stringify(data, null, 2));
 
   return { ...contract, abi: JSON.parse(contract.interface.format("json")) };
 };
@@ -93,17 +101,23 @@ const startFarming = async () => {
 };
 
 const addPool = async (pair) => {
-  const receipt = await SolarDistributorV2.add(
-    100, // uint256 _allocPoint,
-    pair, // IBoringERC20 _lpToken,
-    0, // uint16 _depositFeeBP,
-    0, // uint256 _harvestInterval
-    [trustedForwarder] // IComplexRewarder[] calldata _rewarders
-  );
-  await receipt.wait();
+  try {
+    const receipt = await SolarDistributorV2.add(
+      "100", // uint256 _allocPoint,
+      pair, // IBoringERC20 _lpToken,
+      "0", // uint16 _depositFeeBP,
+      "0", //uint256 _harvestInterval,
+      [trustedForwarder] // uint256 _harvestInterval // IComplexRewarder[] calldata _rewarders
+    );
+    await receipt.wait();
 
-  console.log(`Tx successful with hash: ${receipt.hash}`);
-  console.log();
+    console.log(`Tx successful with hash: ${receipt.hash}`);
+    console.log();
+  } catch (error) {
+    console.log();
+    console.log("ERROR => ", error);
+    console.log();
+  }
 };
 
 const main = async () => {
@@ -114,15 +128,16 @@ const main = async () => {
   console.log();
 
   // Tokens
-  const weth = await deployer("WETH");
-  const a = await deployer("A");
-  const b = await deployer("B");
-  const c = await deployer("C");
-  const dai = await deployer("DAI");
-  const usdc = await deployer("USDC");
-  const usdt = await deployer("USDT");
+  const weth = await deployer("WETH", process.env.WETH);
+  const a = await deployer("A", process.env.A);
+  const b = await deployer("B", process.env.B);
+  const c = await deployer("C", process.env.C);
+  const dai = await deployer("DAI", process.env.DAI);
+  const usdc = await deployer("USDC", process.env.USDC);
+  const usdt = await deployer("USDT", process.env.USDT);
   const solarBeamToken = await deployer(
     "contracts/SolarBeamTokenFlatten.sol:SolarBeamToken",
+    process.env.TOKEN_ADDRESS,
     "SolarBeamToken",
     trustedForwarder
   );
@@ -130,6 +145,7 @@ const main = async () => {
   // Deploy Factory
   factory = await deployer(
     "contracts/SolarFactoryFlatten.sol:SolarFactory",
+    process.env.FACTORY,
     "factory",
     deployerAddress
   );
@@ -137,13 +153,18 @@ const main = async () => {
   // Deploy Router
   const router = await deployer(
     "contracts/SolarRouter02Flatten.sol:SolarRouter02",
+    process.env.ROUTER,
     "router",
     factory.address,
     weth.address
   );
 
   // Deploy multicall2
-  await deployer("contracts/MulticallFlatten.sol:Multicall2", "Multicall2");
+  await deployer(
+    "contracts/MulticallFlatten.sol:Multicall2",
+    process.env.MULTICALL_V2,
+    "Multicall2"
+  );
 
   // tokens Approve
   await approve(a, router.address);
@@ -157,6 +178,9 @@ const main = async () => {
   await createPair(dai, usdc);
   await createPair(usdt, usdc);
   await createPair(dai, usdt);
+  await createPair(a, b);
+  await createPair(b, c);
+  await createPair(a, c);
 
   const factoryPairsLength = await factory.allPairsLength();
   console.log("factoryPairsLength", factoryPairsLength);
@@ -171,6 +195,7 @@ const main = async () => {
   // Deploy Farms
   SolarDistributorV2 = await deployer(
     "contracts/SolarDistributorV2Flatten.sol:SolarDistributorV2",
+    process.env.GEOS_DISTRIBUTOR_V2,
     "SolarDistributorV2",
     solarBeamToken.address, // geos.address,
     100, // geosPerSec,

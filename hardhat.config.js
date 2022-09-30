@@ -9,7 +9,7 @@ require("dotenv").config({ path: configFile });
 require("@nomiclabs/hardhat-ethers");
 
 module.exports = {
-  defaultNetwork: "ganache",
+  defaultNetwork: "hardhat",
   networks: {
     hardhat: {},
     moonbeam: {

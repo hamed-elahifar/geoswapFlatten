@@ -9,6 +9,7 @@
   "scripts": {
     "deploy:ganache": "npx hardhat run scripts/deploy.js --network ganache",
     "deploy:moonbeam": "npx hardhat run scripts/deploy.js --network moonbeam",
+    "deploy:hardhat": "npx hardhat run scripts/deploy.js --network hardhat",
     "compile": "npx hardhat compile",
     "test": "npm compile --force && npx hardhat test",
     "debug": "DEBUG=true npm compile --force && npx hardhat test"
